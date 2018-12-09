@@ -3,10 +3,10 @@ import React, { Component } from 'react'
 import './App.css'
 import abiDutchX from './abiDutchX'
 import abiWeth from './abiWeth'
+import Form from './FlavorForm'
 
 const addressDutchX = '0x4e69969d9270ff55fc7c5043b074d4e45f795587'
 const addressWeth = '0xc778417e063141139fce010982780140aa0cd5ab'
-
 
 class App extends Component {
   state = {
@@ -154,23 +154,17 @@ class App extends Component {
         <header className="App-header">
           <h1>Deposit WETH into the DutchX</h1>
 
-          <label>Amount of WETH:</label>
-          <input          
-            value={ this.state.amount }
-            onChange={ event => this.setState({ amount: event.target.value }) }
-            placeholder="Enter the amount..."
-            />
-          <button onClick={ this.deposit }>Deposit</button>
-          <div className="App">
-            {/* ... */}
+          {/* <button onClick={ this.deposit }>Deposit</button> */}
+          {/* <div className="App">
             <button onClick={ this.wrapEther }>Wrap Ether</button>
 
             <button onClick={ this.getBalances }>Get balances</button>
 
             <button onClick={ this.setAllowance }>Set Allowance</button>
 
-            {/* ... */}
-          </div>
+          </div> */}
+          <Form/>
+
           { this.state.message && (
             <div className="message">
               <span className="times" onClick={ () => this.setState({ message: null }) }>&times;</span>
