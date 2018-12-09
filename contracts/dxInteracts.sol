@@ -2,16 +2,15 @@ pragma solidity ^0.4.25;
 
 import "@gnosis.pm/dx-contracts/contracts/DutchExchange.sol";
 import "@gnosis.pm/util-contracts/contracts/Token.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "utils/EventsDxInteracts.sol";
+import "utils/RelayWhitelist.sol";
 
-contract dxInteracts is Ownable {
+contract dxInteracts is  RelayWhitelist {
     
     // Address of DutchX exchange contract
     DutchExchange public dx;
     // Wrapped Ether address to handle Ether requests
     Token private weth;
-    // whitelisted relayers
-    mapping(address => bool) public relayerWhitelist;
 
     struct Request {
         // address requesting to join auction
@@ -27,16 +26,18 @@ contract dxInteracts is Ownable {
         // signed parametres for transfer function
         bytes signedParametres;
     }
-    mapping(uint8 => Request) public requests;
+    // mapping(uint8 => Request) public requests;
+    Request[] public requests;
 
-    modifier isWhitelisted(address _addr) {
-        require(whitelist[_addr], "Relayer not whitelisted.");
-        _;
-    }
-
+    /**
+      * Constructor for dutchX interaction service.
+      *
+      * @param _dx Address of DutchExchange contract
+     */
     constructor(address _dx) 
         public
     {
+        super();
         require(address(_dx) != address(0), "dutchX address cannot be 0");
 
         dx = DutchExchange(_dx);
@@ -46,20 +47,6 @@ contract dxInteracts is Ownable {
         weth = Token("0xc778417E063141139Fce010982780140Aa0cD5Ab");
     }
 
-    function addRelayer(address _addr) 
-        public
-        onlyOwner
-    {
-        relayerWhitelist[_addr] = true;
-    }
-
-    function removeRelayer(address _addr) 
-        public
-        onlyOwner
-    {
-        relayerWhitelist[_addr] = false;
-    }
-
     function updateDutchExchange(address _dx) 
         public 
         onlyOwner 
@@ -67,18 +54,19 @@ contract dxInteracts is Ownable {
         dx = DutchExchange(_dx);
     }
 
-    function newRequest(
+    function newRequest (
         address _requester,
         address _provided,
         address _desired,
         uint _min,
-        uint max,
-        bytes signedParametres   
+        uint _max,
+        bytes _signedParametres   
     )
         public
         onlyWhitelist(msg.sender)
     {
-
+        requests.push(Request(_requester, _provided, _desired, _min, _max, _signedParametres));
+        emit NewRequest(_requester, _provided, _desired, _min, _max);
     }
 
     
