@@ -151,7 +151,12 @@ contract dxInteracts is  RelayWhitelist {
         success = true;
     }
 
-
+    /**
+      * Auction proposed by relayer to be joined
+      * 
+      * @param _rqId Identifier of request
+      * @param _auctionIndex Index of auction to be joined
+     */
     function joinAuction(
         uint16 _rqId,
         uint _auctionIndex
@@ -171,6 +176,34 @@ contract dxInteracts is  RelayWhitelist {
         }
 
         emit AuctionJoined();
+        success = true;
+    }
+
+    /**
+      * Auction proposed by relayer to be collected
+      * 
+      * @param _rqId Identifier of request
+      * @param _auctionIndex Index of auction to be joined
+     */
+    function collectAuction(
+        uint16 _rqId,
+        uint _auctionIndex
+    )
+        public
+        onlyWhitelist(msg.sender)
+        returns (bool success)
+    {
+        Request memory rq = requests[_rqId];
+        // TODO : require conditions
+        // require that auction be in bounds of request
+        //require();
+        if(rq.buy) {
+            dx.claimBuyerFunds(rq.provided, rq.desired, this, _auctionIndex);
+        } else {
+            dx.claimSellerFunds(rq.provided, rq.desired, this, _auctionIndex);
+        }
+
+        emit AuctionClaimed();
         success = true;
     }
 
@@ -194,6 +227,10 @@ contract dxInteracts is  RelayWhitelist {
     );
 
     event AuctionJoined(
+
+    );
+
+    event AuctionClaimed(
 
     );
     
