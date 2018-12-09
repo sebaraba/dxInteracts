@@ -19,3 +19,6 @@ describe observables and client
 
 ### authors
 Seba Raba and Fred Lacs
+
+### disclaimer
+Code was made over a hackathon, not that many hours inbetween the commits as you can see. Its a bit messy but we tried to lay out the skeleton of the project to be worked on.
