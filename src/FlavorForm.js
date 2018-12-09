@@ -84,8 +84,9 @@ class FlavorForm extends React.Component {
                 value={ this.state.amount }
                 onChange={ event => this.setState({ amount: event.target.value }) }
                 placeholder="Enter the amount..."
-                />
+                />            
           </div>
+          <button> Submit Transaction </button>
         </form>
       );
     }

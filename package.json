@@ -3,12 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-<<<<<<< HEAD
-    "got": "^7.1.0",
-=======
+
     "@gnosis.pm/dx-contracts": "^1.0.9",
     "openzeppelin-solidity": "^2.0.0",
->>>>>>> 97f3d988328cd088f322fb8ae63d56805fa07751
     "react": "^16.6.3",
     "react-checkbox-group": "^4.0.1",
     "react-dom": "^16.6.3",
