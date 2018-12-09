@@ -1,17 +1,11 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract RelayWhitelist is Ownable {
-
-    constructor ()
-        public
-    {
-        super();
-    }
     
-    modifier isWhitelisted(address _addr) {
-        require(whitelist[_addr], "Relayer not whitelisted.");
+    modifier onlyWhitelist(address _addr) {
+        require(relayerWhitelist[_addr], "Relayer not whitelisted.");
         _;
     }
 
