@@ -11,7 +11,7 @@ contract dxInteracts is  RelayWhitelist {
     // Wrapped Ether address to handle Ether requests
     Token private weth;
 
-    enum RequestState {CREATED, WAITING_FOR_AUCTION}
+    enum RequestState {CREATED, WAITING_FOR_AUCTION, COMPLETE}
 
     struct Request {
         // address requesting to join auction
@@ -111,7 +111,22 @@ contract dxInteracts is  RelayWhitelist {
             require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
             require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
 
-            emit RequestProcessed(_id, RequestState.CREATED);
+            
+        } else if(rq.state == RequestState.WAITING_FOR_AUCTION) {
+            require(joinAuction(), "Not able to join auction");
+
+        }
+        emit RequestProcessed(_id, rq.state);
+        progressRequest(_id);
+    }
+
+    function progressRequest(uint16 _id)
+        internal
+    {
+        if(requests[_id].state == RequestState.CREATED) {
+            requests[_id].state = RequestState.WAITING_FOR_AUCTION;
+        } else if(requests[_id].state == RequestState.WAITING_FOR_AUCTION) {
+            requests[_id].state = RequestState.COMPLETE;
         }
     }
 
@@ -141,6 +156,14 @@ contract dxInteracts is  RelayWhitelist {
         success = true;
     }
 
+    function joinAuction()
+        internal
+        returns (bool success)
+    {
+        emit AuctionJoined();
+        return true;
+    }
+
     event NewRequest(
         address indexed _requester,
         address indexed _provided,
@@ -157,6 +180,10 @@ contract dxInteracts is  RelayWhitelist {
     event Deposit(
         address indexed token,
         uint amount
+    );
+
+    event AuctionJoined(
+
     );
     
 }

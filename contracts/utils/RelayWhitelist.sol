@@ -29,12 +29,4 @@ contract RelayWhitelist is Ownable {
         relayerWhitelist[_addr] = false;
         emit RelayerRemoved(_addr);
     }
-
-    function isWhitelist(address _addr) 
-        public 
-        view 
-        returns (bool) 
-    {
-        return relayerWhitelist[_addr];
-    }
 }
