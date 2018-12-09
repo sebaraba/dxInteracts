@@ -11,6 +11,8 @@ contract dxInteracts is  RelayWhitelist {
     // Wrapped Ether address to handle Ether requests
     Token private weth;
 
+    enum RequestState {CREATED, WAITING_FOR_AUCTION, COMPLETE}
+
     struct Request {
         // address requesting to join auction
         address requester;
@@ -26,6 +28,10 @@ contract dxInteracts is  RelayWhitelist {
         uint maxPrice;
         // signed parametres for transfer function
         bytes signedParametres;
+        // State request is at
+        RequestState state;
+        // if trade is buy or sell
+        bool buy;
     }
     // Request[] public requests;
     mapping(uint16 => Request) public requests;
@@ -65,20 +71,19 @@ contract dxInteracts is  RelayWhitelist {
         address _desired,
         uint _min,
         uint _max,
-        bytes _signedParametres   
+        bytes _signedParametres,
+        bool _buy
     )
         public
         onlyWhitelist(msg.sender)
     {
         require(nonce + 1 > nonce, "Nonce overflow");
-
-        requests[nonce] = Request(_requester, Token(_provided), _providedAmount, Token(_desired), _min, _max, _signedParametres);
-        emit NewRequest(_requester, _provided, _desired, _min, _max);
+        
+        requests[nonce] = Request(_requester, Token(_provided), _providedAmount, Token(_desired), _min, _max, _signedParametres, RequestState.CREATED, _buy);
+        emit NewRequest(_requester, _provided, _desired, _min, _max, _buy);
 
         processRequest(nonce);
-        nonce = nonce + 1;
-
-        
+        nonce = nonce + 1;   
     }
 
     /**
@@ -94,10 +99,29 @@ contract dxInteracts is  RelayWhitelist {
         // execute transaction provided by user
         rq.provided.transfer(rq.signedParametres);
         */
+        if(rq.state == RequestState.CREATED) {
+            require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
+            require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
 
-        require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
-        require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
-        emit RequestProcessed(_id);
+        } else if(rq.state == RequestState.WAITING_FOR_AUCTION) {
+            // require(joinAuction(_id), "Not able to join auction");
+            // verification
+        } else if(rq.state == RequestState.COMPLETE) {
+            // require claim funds
+            // verification
+        }
+        emit RequestProcessed(_id, rq.state);
+        progressRequest(_id);
+    }
+
+    function progressRequest(uint16 _id)
+        internal
+    {
+        if(requests[_id].state == RequestState.CREATED) {
+            requests[_id].state = RequestState.WAITING_FOR_AUCTION;
+        } else if(requests[_id].state == RequestState.WAITING_FOR_AUCTION) {
+            requests[_id].state = RequestState.COMPLETE;
+        }
     }
 
     /**
@@ -113,6 +137,7 @@ contract dxInteracts is  RelayWhitelist {
         success = true;
     }
 
+    
     function depositOnDx(Token _token, uint _amount) 
         internal
         returns (bool success)
@@ -126,21 +151,50 @@ contract dxInteracts is  RelayWhitelist {
         success = true;
     }
 
+
+    function joinAuction(
+        uint16 _rqId,
+        uint _auctionIndex
+    )
+        public
+        onlyWhitelist(msg.sender)
+        returns (bool success)
+    {
+        Request memory rq = requests[_rqId];
+        // TODO : require conditions
+        // require that auction be in bounds of request
+        //require();
+        if(rq.buy) {
+            dx.postBuyOrder(rq.provided, rq.desired,_auctionIndex, rq.providedAmount);
+        } else {
+            dx.postSellOrder(rq.provided, rq.desired,_auctionIndex, rq.providedAmount);
+        }
+
+        emit AuctionJoined();
+        success = true;
+    }
+
     event NewRequest(
         address indexed _requester,
         address indexed _provided,
         address indexed _desired,
         uint _min,
-        uint _max
+        uint _max,
+        bool _buy
     );
 
     event RequestProcessed(
-        uint _id
+        uint _id,
+        RequestState state
     );
 
     event Deposit(
         address indexed token,
         uint amount
+    );
+
+    event AuctionJoined(
+
     );
     
 }

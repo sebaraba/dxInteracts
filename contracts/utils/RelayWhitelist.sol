@@ -29,5 +29,4 @@ contract RelayWhitelist is Ownable {
         relayerWhitelist[_addr] = false;
         emit RelayerRemoved(_addr);
     }
-
 }
