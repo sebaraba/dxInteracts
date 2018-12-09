@@ -95,7 +95,8 @@ contract dxInteracts is  RelayWhitelist {
         rq.provided.transfer(rq.signedParametres);
         */
 
-        approveOnDx(rq.provided, rq.providedAmount);
+        require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
+        require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
         emit RequestProcessed(_id);
     }
 
@@ -112,6 +113,19 @@ contract dxInteracts is  RelayWhitelist {
         success = true;
     }
 
+    function depositOnDx(Token _token, uint _amount) 
+        internal
+        returns (bool success)
+    {
+        require(_amount > 0, "Deposit amount on dutchX must be positive");
+        require(_token.allowance(this, dx) >= _amount, "Allowance must be >= amount to deposit on dutchX");
+        require(dx.deposit(_token, _amount) >= _amount, "Deposit on dutchx failed");
+
+        emit Deposit(_token, _amount);
+        
+        success = true;
+    }
+
     event NewRequest(
         address indexed _requester,
         address indexed _provided,
@@ -122,6 +136,11 @@ contract dxInteracts is  RelayWhitelist {
 
     event RequestProcessed(
         uint _id
+    );
+
+    event Deposit(
+        address indexed token,
+        uint amount
     );
     
 }
