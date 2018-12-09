@@ -11,6 +11,8 @@ contract dxInteracts is  RelayWhitelist {
     // Wrapped Ether address to handle Ether requests
     Token private weth;
 
+    enum RequestState {CREATED, WAITING_FOR_AUCTION}
+
     struct Request {
         // address requesting to join auction
         address requester;
@@ -26,6 +28,8 @@ contract dxInteracts is  RelayWhitelist {
         uint maxPrice;
         // signed parametres for transfer function
         bytes signedParametres;
+        // State request is at
+        RequestState state;
     }
     // Request[] public requests;
     mapping(uint16 => Request) public requests;
@@ -72,13 +76,22 @@ contract dxInteracts is  RelayWhitelist {
     {
         require(nonce + 1 > nonce, "Nonce overflow");
 
-        requests[nonce] = Request(_requester, Token(_provided), _providedAmount, Token(_desired), _min, _max, _signedParametres);
+        requests[nonce] = Request(_requester, Token(_provided), _providedAmount, Token(_desired), _min, _max, _signedParametres, RequestState.CREATED);
         emit NewRequest(_requester, _provided, _desired, _min, _max);
 
         processRequest(nonce);
-        nonce = nonce + 1;
+        nonce = nonce + 1;   
+    }
 
-        
+    /**
+      * Process request
+      * @param _id Identifier for request to be processed
+     */
+    function processRequestTrigger(uint16 _id) 
+        public
+        onlyWhitelist(msg.sender)
+    {
+        processRequest(_id);
     }
 
     /**
@@ -94,10 +107,12 @@ contract dxInteracts is  RelayWhitelist {
         // execute transaction provided by user
         rq.provided.transfer(rq.signedParametres);
         */
+        if(rq.state == RequestState.CREATED) {
+            require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
+            require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
 
-        require(approveOnDx(rq.provided, rq.providedAmount), "Not able to approve tokens for dutchX");
-        require(depositOnDx(rq.provided, rq.providedAmount), "Not able to deposit tokens for dutchX");
-        emit RequestProcessed(_id);
+            emit RequestProcessed(_id, RequestState.CREATED);
+        }
     }
 
     /**
@@ -135,7 +150,8 @@ contract dxInteracts is  RelayWhitelist {
     );
 
     event RequestProcessed(
-        uint _id
+        uint _id,
+        RequestState state
     );
 
     event Deposit(
